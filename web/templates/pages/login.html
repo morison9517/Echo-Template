@@ -1,0 +1,49 @@
+{{/*
+  ログイン画面。
+
+  <input name="○○"> の名前が Go 側の c.FormValue("○○") と1対1で対応する。
+  ★ここがズレると値が届かない。
+*/}}
+
+{{ define "content" }}
+
+<section class="auth-panel">
+  <h1>ログイン</h1>
+
+  <form method="post" action="/auth/login" class="stacked-form">
+    <input type="hidden" name="csrf_token" value="{{ .CSRFToken }}" />
+    <input type="hidden" name="next" value="{{ .Next }}" />
+
+    <div class="field">
+      <label for="username">ユーザー名</label>
+      <input
+        type="text"
+        id="username"
+        name="username"
+        value="{{ .Username }}"
+        required
+        autocomplete="username"
+        autofocus
+      />
+    </div>
+
+    <div class="field">
+      <label for="password">パスワード</label>
+      <input
+        type="password"
+        id="password"
+        name="password"
+        required
+        autocomplete="current-password"
+      />
+    </div>
+
+    <button type="submit" class="btn btn-primary btn-block">ログイン</button>
+  </form>
+
+  <p class="auth-switch">
+    アカウントがまだない方は <a href="/auth/register">新規登録</a>
+  </p>
+</section>
+
+{{ end }}

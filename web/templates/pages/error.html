@@ -1,0 +1,21 @@
+{{/*
+  error.html = 400 / 401 / 403 / 404 / 500 で共通に使うエラーページ。
+
+  出す文言(数字・英語名・日本語の説明)は Go 側から渡している。
+  文言を直したいときも種類を増やしたいときも internal/handlers/error.go を見る。
+  このファイルを種類ごとに増やす必要はない。
+*/}}
+
+{{ define "content" }}
+
+<section class="error-panel">
+  <p class="error-code">{{ .ErrorCode }}</p>
+
+  <h1 class="error-name">{{ .ErrorName }}</h1>
+
+  <p class="error-message">{{ .ErrorMessage }}</p>
+
+  <a href="/" class="btn btn-primary">トップページへ戻る</a>
+</section>
+
+{{ end }}

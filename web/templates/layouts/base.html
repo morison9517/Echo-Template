@@ -1,0 +1,86 @@
+{{/*
+  base.html = 全ページ共通の型紙。ヘッダー・フッター・CSSの読み込みをここにまとめている。
+
+  穴(block)は3つ。各ページは {{ define "名前" }} ... {{ end }} で中身を書く。
+    head_extra … そのページ専用のCSS
+    content    … ページの本体(必須)
+    scripts    … そのページ専用のJS
+
+  画面で使える {{ .○○ }} の一覧は internal/view/page.go にある。
+  ★渡していない値は空になるだけでエラーが出ない。「出ない」ときはまずそこを疑う。
+  ★{{ range }} の中ではドットが「今の1件」に変わる。全体の値は {{ $.SiteName }}。
+*/}}
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="csrf-token" content="{{ .CSRFToken }}" />
+
+    <title>{{ if .Title }}{{ .Title }} | {{ end }}{{ .SiteName }}</title>
+
+    <meta name="description" content="{{ .Description }}" />
+    <link rel="canonical" href="{{ .CanonicalURL }}" />
+
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="{{ .SiteName }}" />
+    <meta property="og:title" content="{{ if .Title }}{{ .Title }} | {{ end }}{{ .SiteName }}" />
+    <meta property="og:description" content="{{ .Description }}" />
+    <meta property="og:url" content="{{ .CanonicalURL }}" />
+    <meta property="og:locale" content="ja_JP" />
+
+    {{ if .OGPImage }}
+    <meta property="og:image" content="{{ .SiteURL }}{{ .OGPImage }}" />
+    <meta name="twitter:card" content="summary_large_image" />
+    {{ end }}
+
+    <link rel="icon" href="/favicon.ico" />
+    <link rel="stylesheet" href="/static/css/style.css" />
+
+    {{ block "head_extra" . }}{{ end }}
+  </head>
+
+  <body>
+    <header class="site-header">
+      <div class="container header-inner">
+        <a class="site-title" href="/">{{ .SiteName }}</a>
+
+        <nav class="site-nav">
+          {{ if .AuthEnabled }} {{ if .CurrentUser }}
+          <span class="nav-user">{{ .CurrentUser.Username }} さん</span>
+
+          <form action="/auth/logout" method="post" class="inline-form">
+            <input type="hidden" name="csrf_token" value="{{ .CSRFToken }}" />
+            <button type="submit" class="btn btn-ghost">ログアウト</button>
+          </form>
+          {{ else }}
+          <a class="btn btn-ghost" href="/auth/login">ログイン</a>
+          <a class="btn btn-primary" href="/auth/register">新規登録</a>
+          {{ end }} {{ end }}
+        </nav>
+      </div>
+    </header>
+
+    <div class="container">
+      {{ if .Flashes }}
+      <ul class="flash-list">
+        {{ range .Flashes }}
+        <li class="flash flash-{{ .Category }}">{{ .Message }}</li>
+        {{ end }}
+      </ul>
+      {{ end }}
+    </div>
+
+    <main class="container">{{ block "content" . }}{{ end }}</main>
+
+    <footer class="site-footer">
+      <div class="container">
+        <small>{{ .SiteName }}</small>
+      </div>
+    </footer>
+
+    <script src="/static/js/main.js"></script>
+
+    {{ block "scripts" . }}{{ end }}
+  </body>
+</html>

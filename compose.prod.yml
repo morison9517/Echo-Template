@@ -112,6 +112,10 @@ services:
 
     restart: always
 
+    environment:
+      # 証明書を取ったドメイン。設定ファイルの中の ${HTTPS_DOMAIN} に入る。
+      HTTPS_DOMAIN: ${HTTPS_DOMAIN:-}
+
     ports:
       # ★443 はHTTPS化前から開けておいて構わない(中で誰も待っていないだけ)。
       #   後で足し忘れると「設定は合っているのに繋がらない」で長く詰まる。
@@ -120,9 +124,16 @@ services:
       - "443:443"
 
     volumes:
-      # ★HTTPS化したら、この1行を prod-https.conf に書き換える(切り替えはここだけ)。
-      #   証明書を取る前に書き換えないこと。Nginxが起動しなくなる。
-      - ./docker/nginx/prod.conf:/etc/nginx/conf.d/default.conf:ro
+      # ▼ ★HTTPとHTTPSの切り替えは、.env の HTTPS_DOMAIN だけで決まる
+      #
+      #     HTTPS_DOMAIN が空       → prod.conf(HTTP)
+      #     HTTPS_DOMAIN=example.com → prod-https.conf(HTTPS)
+      #
+      #   ${HTTPS_DOMAIN:+-https} は「中身があるときだけ -https という文字になる」書き方。
+      #   ★証明書を取る前に HTTPS_DOMAIN を書かないこと。Nginxが起動しなくなる。
+      #   置き先が templates/ なのは、設定の中の ${HTTPS_DOMAIN} を
+      #   Nginxの箱が起動時に実際のドメインへ書き換えてくれる場所だから。
+      - ./docker/nginx/prod${HTTPS_DOMAIN:+-https}.conf:/etc/nginx/templates/default.conf.template:ro
       # HTTP版・HTTPS版の両方から読み込む中身。★どちらでも必要。
       - ./docker/nginx/app.inc:/etc/nginx/app.inc:ro
       # CSS・JSはソースのフォルダをそのまま見せる(:ro = 読むだけ)。
@@ -150,7 +161,7 @@ services:
   #   更新:
   #       docker compose -f compose.prod.yml run --rm certbot renew
   #
-  #   ★取る前に、HTTP(prod.conf)のまま nginx が起動していること。
+  #   ★取る前に、HTTP(.env の HTTPS_DOMAIN が空)のまま nginx が起動していること。
   #   手順の全体は docs/DEPLOY.md の「HTTPSにする」。
   certbot:
     image: certbot/certbot:latest

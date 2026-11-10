@@ -153,6 +153,7 @@ case_echo/
 ├── .air.toml               保存したら自動で作り直す設定
 ├── go.mod / go.sum         買い物リストとレシート(全員が同じ部品を使うための記録)
 │
+├── .github/dependabot.yml  部品の新しい版が出たら知らせてもらう設定
 ├── .vscode/                共通のエディタ設定
 │
 ├── LICENSE                 使ってよい条件(MIT)
@@ -301,36 +302,41 @@ base.html(型紙)                    pages/index.html(中身)
 | **ログイン試行制限** | そのまま使える(5回失敗で15分) | 回数と時間の定数(`internal/handlers/loginlimit.go`) |
 | **検索・SNSでの見え方** | そのまま使える。説明文は書き換える | サイト名と説明文(`internal/view/page.go`) |
 | **成りすまし対策(CSRF)** | そのまま使える(Echo付属のもの) | 設定(`internal/middleware/csrf.go`) |
-| **HTTPS** | HTTPで動く。設定は用意済み | 設定を1行差し替え([docs/DEPLOY.md](docs/DEPLOY.md)) |
+| **CSS・JSの版の印** | そのまま使える。直したCSSが利用者の画面に必ず届く | `{{ static "css/style.css" }}` と書く(`internal/view/static.go`) |
+| **HTTPS** | HTTPで動く。設定は用意済み | `.env` に `HTTPS_DOMAIN` を1行([docs/DEPLOY.md](docs/DEPLOY.md)) |
+| **部品の更新の知らせ** | GitHubに上げれば月1回届く | `.github/dependabot.yml`(要らなければ消す) |
 
 > エラーページは、存在しないURL(例 `/hogehoge`)を開けば確認できます。
 
 ---
 
-## 4つのテンプレートの対応表
+## 3つのテンプレートの対応表
 
 同じ構成・同じ画面で作ってあるので、1つ分かれば他も読めます。
 
-| やること | Flask版 | Gin版 | Echo版 | Django版 |
-| --- | --- | --- | --- | --- |
-| 起動の入口 | `src/web/app.py` | `cmd/server/main.go` | `cmd/server/main.go` | `manage.py` + `config/` |
-| 設定 | `config.py` | `internal/config/` | `internal/config/` | `config/settings.py` |
-| データの形 | `models.py` | `internal/models/` | `internal/models/` | `main/models.py` |
-| 画面を返す | `routes.py` | `handlers/page.go` | `handlers/page.go` | `main/views.py` |
-| ログイン | `auth/routes.py` | `handlers/auth.go` | `handlers/auth.go` | `accounts/views.py` |
-| ログイン試行制限 | `loginlimit.py` | `handlers/loginlimit.go` | `handlers/loginlimit.go` | `accounts/loginlimit.py` |
-| エラーページ | `errors.py` | `handlers/error.go` | `handlers/error.go` | `main/errors.py` |
-| 検索・SNS対応 | `seo.py` | `internal/view/page.go` | `internal/view/page.go` | `main/context_processors.py` |
-| 型紙 | `base.html`(Jinja) | `base.html`(Go) | `base.html`(Go) | `base.html`(Django) |
-| 成りすまし対策 | Flask-WTF | 自前で実装 | Echo付属 | Django付属 |
-| 表を作る | `flask init-db` | 起動時に自動 | 起動時に自動 | 起動時に自動 |
-| 表の形を変える | 作り直し(データ消滅) | 列の追加のみ可 | 列の追加のみ可 | **データを保ったまま変更可** |
-| 管理画面 | 無い | 無い | 無い | **`/admin/`** |
-| アプリのポート | 5000 | 8080 | 1323 | 8000 |
-| DBのポート | 3307 | 3308 | 3310 | 3309 |
-| 本番イメージ | 438MB | 48MB | **32MB** | 913MB |
+| やること | Gin版 | Echo版 | Django版 |
+| --- | --- | --- | --- |
+| 起動の入口 | `cmd/server/main.go` | `cmd/server/main.go` | `manage.py` + `config/` |
+| 設定 | `internal/config/` | `internal/config/` | `config/settings.py` |
+| データの形 | `internal/models/` | `internal/models/` | `main/models.py` |
+| 画面を返す | `handlers/page.go` | `handlers/page.go` | `main/views.py` |
+| ログイン | `handlers/auth.go` | `handlers/auth.go` | `accounts/views.py` |
+| ログイン試行制限 | `handlers/loginlimit.go` | `handlers/loginlimit.go` | `accounts/loginlimit.py` |
+| エラーページ | `handlers/error.go` | `handlers/error.go` | `main/errors.py` |
+| 検索・SNS対応 | `internal/view/page.go` | `internal/view/page.go` | `main/context_processors.py` |
+| 型紙 | `base.html`(Go) | `base.html`(Go) | `base.html`(Django) |
+| 成りすまし対策 | 自前で実装 | Echo付属 | Django付属 |
+| 表を作る | 起動時に自動 | 起動時に自動 | 起動時に自動 |
+| 表の形を変える | 列の追加のみ可 | 列の追加のみ可 | **データを保ったまま変更可** |
+| 管理画面 | 無い | 無い | **`/admin/`** |
+| アプリのポート | 8080 | 1323 | 8000 |
+| DBのポート | 3308 | 3310 | 3309 |
+| 本番イメージ | 48MB | **32MB** | 913MB |
 
-> ポートをずらしてあるので、**4つ同時に起動しても衝突しません。**
+> ポートをずらしてあるので、**同時に起動しても衝突しません**(Flask版はアプリ 5000 / DB 3307)。
+
+> **Flask版は入門用として別扱いです。** はじめてのWebアプリを短期間で作ることに絞ってあり、
+> この表とは構成が揃っていません(<https://github.com/morison9517/Flask-Template>)。
 
 > **Gin版とEcho版は、フォルダ構成も画面(HTML/CSS/JS)もまったく同じです。**
 > 違うのは Go のコードの書き方だけなので、2つを並べるとフレームワークの違いだけが見えます。

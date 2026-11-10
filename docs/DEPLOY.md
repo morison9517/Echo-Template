@@ -201,29 +201,15 @@ Successfully received certificate.
 
 と出れば成功です。証明書は `certbot_conf` の保管庫に入りました。
 
-### ④ HTTPS版の設定に切り替える
+### ④ HTTPSに切り替える
 
-**2か所です。**
+**`.env` に1行書くだけです。** 設定ファイルは書き換えません。
 
-1. `docker/nginx/prod-https.conf` の `example.com` を**自分のドメインに書き換える**
+```
+HTTPS_DOMAIN=自分のドメイン
+```
 
-   ```nginx
-   ssl_certificate     /etc/letsencrypt/live/example.com/fullchain.pem;
-   ssl_certificate_key /etc/letsencrypt/live/example.com/privkey.pem;
-   ```
-
-   ★ここの書き換え忘れが、HTTPS化でいちばん多いつまずきです。
-   証明書はあるのに Nginx が起動せず、原因が設定側にあると気づきにくい。
-
-2. `compose.prod.yml` の nginx の**1行を差し替える**
-
-   ```yaml
-   # 変更前
-   - ./docker/nginx/prod.conf:/etc/nginx/conf.d/default.conf:ro
-   # 変更後
-   - ./docker/nginx/prod-https.conf:/etc/nginx/conf.d/default.conf:ro
-   ```
-
+`https://` は付けず、ドメインだけを書きます(例:`app.example.com`)。
 そして Nginx を作り直します。
 
 ```bash
@@ -233,14 +219,21 @@ docker compose -f compose.prod.yml up -d nginx
 `https://自分のドメイン` を開いて、鍵マークが付けば成功です。
 `http://` で開いても、自動でHTTPSへ移ります。
 
+> **仕組み**:`HTTPS_DOMAIN` が空のあいだは `docker/nginx/prod.conf`(HTTP)、
+> 中身が入ると `docker/nginx/prod-https.conf`(HTTPS)が使われます。
+> 証明書の場所もこの値から決まるので、ドメインをファイルに書く必要がありません。
+> **本番のドメインがGitに残らない**のも利点です。
+
 > **起動しなかったら、先にログを見てください。**
 >
 > ```bash
 > docker compose -f compose.prod.yml logs nginx
 > ```
 >
-> `cannot load certificate` と出ていれば、1番のドメインの書き換え忘れです。
-> **HTTP版(`prod.conf`)に戻せばサイトはすぐ復帰します。**落ち着いて直せます。
+> `cannot load certificate` と出ていれば、`HTTPS_DOMAIN` の値が
+> 証明書を取ったドメインと違います(打ち間違い、または取る前に書いた)。
+> **`HTTPS_DOMAIN` を空に戻して `up -d nginx` すれば、HTTPのサイトとしてすぐ復帰します。**
+> 落ち着いて直せます。
 
 ### ⑤ 自動更新を仕掛ける
 
@@ -417,6 +410,25 @@ sudo swapon /swapfile
 echo '/swapfile none swap sw 0 0' | sudo tee -a /etc/fstab
 ```
 
+### CSSやJSを直したのに、本番の画面が古いまま
+
+**そのファイルのURLに「版の印」が付いていない**のが原因です。
+
+本番ではブラウザがCSS・JS・画像を30日間手元に取っておきます。このテンプレートは
+URLに中身から作った印を付けて、直したときだけ取り直させています(`internal/view/static.go`)。
+HTMLに `/static/...` と直接書いたファイルには、この印が付きません。
+
+```html
+<!-- × 印が付かない。直しても古いまま -->
+<link rel="stylesheet" href="/static/css/mypage.css" />
+
+<!-- ○ 印が付く -->
+<link rel="stylesheet" href="{{ static "css/mypage.css" }}" />
+```
+
+手元の画面だけ古いときは、`Ctrl + Shift + R`(Macは `Cmd + Shift + R`)で
+強制的に読み直せます。
+
 ### 鍵マークが付かない / 「保護されていない通信」と出る
 
 まず、どちらの状態か切り分けます。
@@ -427,8 +439,8 @@ docker compose -f compose.prod.yml logs nginx
 
 | ログの様子 | 原因 |
 | --- | --- |
-| `cannot load certificate` | `prod-https.conf` のドメインの書き換え忘れ |
-| 何も出ず、80番で普通に動いている | `compose.prod.yml` のマウント行が `prod.conf` のまま |
+| `cannot load certificate` | `.env` の `HTTPS_DOMAIN` が、証明書を取ったドメインと違う |
+| 何も出ず、80番で普通に動いている | `.env` の `HTTPS_DOMAIN` が空のまま(または書いた後に `up -d nginx` していない) |
 | `certificate has expired` | 自動更新が回っていない(`nginx -s reload` 忘れが多い) |
 
 **証明書そのものの期限は、これで見られます。**
@@ -437,7 +449,7 @@ docker compose -f compose.prod.yml logs nginx
 docker compose -f compose.prod.yml run --rm --entrypoint openssl certbot   x509 -enddate -noout -in /etc/letsencrypt/live/自分のドメイン/fullchain.pem
 ```
 
-どの場合も、`compose.prod.yml` のマウント行を `prod.conf` に戻して
+どの場合も、`.env` の `HTTPS_DOMAIN` を空に戻して
 `up -d nginx` すれば、**HTTPのサイトとしてはすぐ復帰します。**
 慌てて設定をいじる前に、先にサイトを生かしてから直してください。
 

@@ -1,0 +1,65 @@
+# =============================================================================
+# dependabot.yml = 使っている部品の「新しい版が出たよ」を、GitHubに知らせてもらう設定
+#
+#   このファイルをGitHubに上げておくと、月に1回、更新をまとめた
+#   プルリクエスト(変更の提案)が自動で届く。中身を見てマージするだけで新しくなる。
+#
+#   ▼ なぜ要るのか
+#
+#     部品には後から穴(脆弱性)が見つかる。直した版が出ても、こちらが入れ替えない
+#     限り古いまま動き続ける。「気づいたら半年前の版だった」を防ぐための仕組み。
+#
+#   ▼ ★マージする前に、手元で一度動かすこと
+#
+#     届いた変更を取り込んで docker compose up --build し、画面が出るか確かめる。
+#     ごくまれに、新しい版で書き方が変わって動かなくなることがある。
+#
+#   ▼ ★急ぎの修正(セキュリティ更新)は、この月1回とは別に届く
+#
+#     そちらはGitHubの画面で有効にする必要がある:
+#     リポジトリの Settings → Advanced Security → Dependabot security updates
+#
+#   ▼ 要らないとき
+#
+#     このファイルを消すだけ。届いたプルリクエストは閉じればよい。
+#     手で更新する方法は docs/SETUP.md の「部品を新しい版にする」。
+# =============================================================================
+
+version: 2
+
+updates:
+  # Goのライブラリ(go.mod)
+  - package-ecosystem: "gomod"
+    directory: "/"
+    schedule:
+      interval: "monthly"
+    # ★1つずつ別々に届くと数が多すぎて読まなくなるので、1通にまとめる。
+    #   番号の先頭が変わる大きな更新(動かなくなる可能性が高いもの)だけは別に届く。
+    groups:
+      minor-and-patch:
+        patterns: ["*"]
+        update-types: ["minor", "patch"]
+
+  # Dockerfile の土台(Go本体など)
+  - package-ecosystem: "docker"
+    directory: "/"
+    schedule:
+      interval: "monthly"
+    # ★1つずつ別々に届くと数が多すぎて読まなくなるので、1通にまとめる。
+    #   番号の先頭が変わる大きな更新(動かなくなる可能性が高いもの)だけは別に届く。
+    groups:
+      minor-and-patch:
+        patterns: ["*"]
+        update-types: ["minor", "patch"]
+
+  # compose.yml / compose.prod.yml の箱(MySQL・Nginx)
+  - package-ecosystem: "docker-compose"
+    directory: "/"
+    schedule:
+      interval: "monthly"
+    # ★1つずつ別々に届くと数が多すぎて読まなくなるので、1通にまとめる。
+    #   番号の先頭が変わる大きな更新(動かなくなる可能性が高いもの)だけは別に届く。
+    groups:
+      minor-and-patch:
+        patterns: ["*"]
+        update-types: ["minor", "patch"]

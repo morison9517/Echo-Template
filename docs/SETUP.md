@@ -243,6 +243,39 @@ docker compose exec web go mod tidy
 
 ---
 
+## 4.5 部品を新しい版にする
+
+使っているライブラリには、後から穴(脆弱性)が見つかります。直した版が出ても、
+**こちらが入れ替えない限り古いまま動き続けます。** ときどき上げてください。
+
+### 自動で知らせてもらう(おすすめ)
+
+`.github/dependabot.yml` を入れてあります。GitHubに上げておくと、**月に1回、
+更新をまとめたプルリクエスト(変更の提案)が届きます。**
+
+1. 届いた変更を手元に取り込む
+2. `docker compose up --build` して、画面が出るか確かめる
+3. 問題なければマージする
+
+> ★急ぎの修正(セキュリティ更新)は、月1回とは別に届きます。
+> GitHubの画面で有効にしておいてください:
+> リポジトリの **Settings → Advanced Security → Dependabot security updates**
+
+### 手で上げる
+
+```bash
+docker compose exec web go get -u ./...
+docker compose exec web go mod tidy
+```
+
+終わったら `docker compose up --build` で動作を確かめ、
+**`go.mod` と `go.sum` をコミットします。**
+
+> ★Go本体も上げたいときは、`Dockerfile` の `FROM golang:1.26.10-bookworm` の番号を変えます。
+> ライブラリを上げた結果「Goが古い」と言われたら、ここを上げてください。
+
+---
+
 ## 5. 困ったとき
 
 ### 「画面が出ない / 繋がらない」

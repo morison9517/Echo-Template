@@ -35,7 +35,7 @@
     {{ end }}
 
     <link rel="icon" href="/favicon.ico" />
-    <link rel="stylesheet" href="/static/css/style.css" />
+    <link rel="stylesheet" href="{{ static "css/style.css" }}" />
 
     {{ block "head_extra" . }}{{ end }}
   </head>
@@ -79,7 +79,7 @@
       </div>
     </footer>
 
-    <script src="/static/js/main.js"></script>
+    <script src="{{ static "js/main.js" }}"></script>
 
     {{ block "scripts" . }}{{ end }}
   </body>

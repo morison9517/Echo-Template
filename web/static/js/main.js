@@ -6,7 +6,7 @@
      ページごとに別ファイルを作り、そのページのHTMLで読み込む:
 
        {{ define "scripts" }}
-         <script src="/static/js/mypage.js"></script>
+         <script src="{{ static "js/mypage.js" }}"></script>
        {{ end }}
 
    ▼ サーバー側との約束ごと(Echo側の作りに合わせてある)

@@ -21,7 +21,7 @@
 #   1.26 とだけ書くと、PCに残っている古い 1.26.x が使われ続け、新しめのライブラリが
 #   「Goが古い」と言ってビルドに失敗する(人によって通ったり通らなかったりする)。
 #   上げるときは go.mod の「go 1.26.x」より新しい番号にすること。
-FROM golang:1.26.10-bookworm AS base
+FROM golang:1.27.3-bookworm AS base
 
 WORKDIR /app
 
